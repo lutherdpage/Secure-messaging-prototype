@@ -1,0 +1,166 @@
+# Troubleshooting Guide — Secure Messaging Prototype
+
+This document provides solutions to the most common issues you may encounter while running or testing the secure messaging prototype.
+
+---
+
+## 📦 Environment & Installation Issues
+
+### 1. “No module named cryptography”
+**Cause:** Dependencies not installed  
+**Fix:**
+```bash
+pip install cryptography
+If you're using a virtual environment, make sure it is activated.
+
+2. Virtual environment will not activate
+Windows PowerShell often blocks scripts.
+
+Fix:
+Run PowerShell as Administrator:
+
+powershell
+Copy code
+Set-ExecutionPolicy RemoteSigned
+Then activate:
+
+powershell
+Copy code
+.\.venv\Scripts\Activate.ps1
+3. Python version errors
+The project requires Python 3.9+.
+
+Check version:
+
+bash
+Copy code
+python --version
+🛢️ Database Issues
+4. “Database is locked”
+Cause: A Python shell or program still has the database open.
+
+Fix:
+
+Close any Python terminals
+
+Close VS Code terminals
+
+Try again
+
+5. User not appearing in the database
+Run inside Python:
+
+python
+Copy code
+import sqlite3
+conn = sqlite3.connect("secure_messages.db")
+cursor = conn.cursor()
+cursor.execute("SELECT * FROM users")
+print(cursor.fetchall())
+conn.close()
+6. Delete a test user
+If you accidentally added a user like alice:
+
+python
+Copy code
+import sqlite3
+conn = sqlite3.connect("secure_messages.db")
+cursor = conn.cursor()
+cursor.execute("DELETE FROM users WHERE username=?", ("alice",))
+conn.commit()
+conn.close()
+7. “no such table: users”
+Cause: The DB was created before the code created the tables.
+
+Fix:
+Delete it:
+
+bash
+Copy code
+del secure_messages.db
+Then re-run your app.
+
+🔐 Encryption Issues
+8. “InvalidToken” during decryption
+Causes:
+
+Wrong encryption key
+
+Corrupted ciphertext
+
+Using a different Fernet key
+
+Fix:
+
+Use a single consistent key
+
+Do not regenerate the key on every run
+
+Store the key safely
+
+9. Decrypted output looks unreadable
+Cause: Decoding encrypted bytes before decrypting.
+
+Fix:
+
+python
+Copy code
+plaintext = fernet.decrypt(stored_ciphertext).decode()
+🔑 Authentication Issues
+10. Password always failing
+Cause: Hash mismatch.
+
+Correct verification:
+
+python
+Copy code
+bcrypt.checkpw(entered_password.encode(), stored_hash)
+11. Forgot a password
+Passwords cannot be recovered.
+
+Reset:
+
+python
+Copy code
+DELETE FROM users WHERE username="theuser";
+Then re-register.
+
+🐞 App Execution Issues
+12. “AttributeError” or “NoneType” issues
+Typically caused by:
+
+Missing return values
+
+Missing encryption key
+
+Empty database results
+
+Debug step-by-step.
+
+13. App exits immediately
+Use this to trace execution:
+
+bash
+Copy code
+python -m trace --trace main.py
+14. Menu options not working
+Ensure user input is cleaned:
+
+python
+Copy code
+choice = input("Enter choice: ").strip()
+🧼 Full Reset (Clean Slate)
+If you want to wipe everything and restart:
+
+bash
+Copy code
+deactivate
+rmdir /s /q .venv
+del secure_messages.db
+Then reinstall:
+
+powershell
+Copy code
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install cryptography
